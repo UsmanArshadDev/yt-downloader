@@ -1,0 +1,16 @@
+{
+  "name": "yt-downloader",
+  "version": "1.0.0",
+  "description": "Simple YouTube video downloader for Ubuntu (Electron + yt-dlp)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "dev": "electron . --no-sandbox"
+  },
+  "keywords": ["youtube", "yt-dlp", "electron", "downloader"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.2.0"
+  }
+}

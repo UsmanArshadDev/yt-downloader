@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' https: data:; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <h1>YouTube Downloader</h1>
+        <p class="subtitle">Paste a video URL, pick a quality, download MP4.</p>
+      </header>
+
+      <section id="deps" class="deps" aria-live="polite">
+        <div class="deps-item" id="deps-ytdlp">
+          <span class="deps-label">yt-dlp</span>
+          <span class="deps-status">Checking…</span>
+        </div>
+        <div class="deps-item" id="deps-ffmpeg">
+          <span class="deps-label">FFmpeg</span>
+          <span class="deps-status">Checking…</span>
+        </div>
+      </section>
+
+      <section class="url-section">
+        <label for="url-input">YouTube URL</label>
+        <div class="url-row">
+          <input
+            id="url-input"
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="analyze-btn" type="button">Analyze</button>
+        </div>
+      </section>
+
+      <section id="meta" class="meta hidden" aria-live="polite">
+        <img id="thumb" class="thumb" alt="Video thumbnail" />
+        <div class="meta-text">
+          <h2 id="title">—</h2>
+          <p id="duration">Duration: —</p>
+          <label for="quality">Quality</label>
+          <select id="quality"></select>
+          <button id="download-btn" type="button">Download</button>
+        </div>
+      </section>
+
+      <section class="progress-section">
+        <div class="progress-track" aria-hidden="true">
+          <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <p id="progress-text" class="progress-text"></p>
+      </section>
+
+      <p id="status" class="status" role="status">Idle</p>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

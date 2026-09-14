@@ -14,53 +14,144 @@
     <main class="app">
       <header class="header">
         <h1>YouTube Downloader</h1>
-        <p class="subtitle">Paste a video URL, pick a quality, download MP4.</p>
+        <p class="subtitle">Paste a video, playlist, or channel URL. Downloads use yt-dlp (android, then cookies if needed).</p>
       </header>
 
-      <section id="deps" class="deps" aria-live="polite">
-        <div class="deps-item" id="deps-ytdlp">
-          <span class="deps-label">yt-dlp</span>
-          <span class="deps-status">Checking…</span>
-        </div>
-        <div class="deps-item" id="deps-ffmpeg">
-          <span class="deps-label">FFmpeg</span>
-          <span class="deps-status">Checking…</span>
-        </div>
-      </section>
+      <div class="layout">
+        <div class="main-col">
+          <section id="deps" class="deps" aria-live="polite">
+            <div class="deps-item" id="deps-ytdlp">
+              <span class="deps-label">yt-dlp</span>
+              <span class="deps-status">Checking…</span>
+            </div>
+            <div class="deps-item" id="deps-ffmpeg">
+              <span class="deps-label">FFmpeg</span>
+              <span class="deps-status">Checking…</span>
+            </div>
+          </section>
 
-      <section class="url-section">
-        <label for="url-input">YouTube URL</label>
-        <div class="url-row">
-          <input
-            id="url-input"
-            type="url"
-            placeholder="https://www.youtube.com/watch?v=…"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button id="analyze-btn" type="button">Analyze</button>
-        </div>
-      </section>
+          <section class="cookies-section" aria-label="Cookies file">
+            <label for="cookies-path">Cookies file (optional, for bot-check videos)</label>
+            <div class="cookies-row">
+              <input
+                id="cookies-path"
+                type="text"
+                readonly
+                placeholder="No cookies.txt selected"
+                spellcheck="false"
+              />
+              <button id="cookies-choose-btn" type="button" class="btn-secondary">Choose…</button>
+              <button id="cookies-clear-btn" type="button" class="btn-secondary">Clear</button>
+            </div>
+            <p class="cookies-hint">
+              Export with a “Get cookies.txt LOCALLY” browser extension, then pick the file once.
+            </p>
+            <div class="concurrency-row">
+              <label for="concurrency">Parallel downloads</label>
+              <select id="concurrency">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+          </section>
 
-      <section id="meta" class="meta hidden" aria-live="polite">
-        <img id="thumb" class="thumb" alt="Video thumbnail" />
-        <div class="meta-text">
-          <h2 id="title">—</h2>
-          <p id="duration">Duration: —</p>
-          <label for="quality">Quality</label>
-          <select id="quality"></select>
-          <button id="download-btn" type="button">Download</button>
-        </div>
-      </section>
+          <section class="url-section">
+            <label for="url-input">YouTube URL</label>
+            <div class="url-row">
+              <input
+                id="url-input"
+                type="url"
+                placeholder="https://www.youtube.com/watch?v=…  or  /playlist  or  /@channel"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button id="analyze-btn" type="button">Analyze</button>
+            </div>
+          </section>
 
-      <section class="progress-section">
-        <div class="progress-track" aria-hidden="true">
-          <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
-        </div>
-        <p id="progress-text" class="progress-text"></p>
-      </section>
+          <section id="meta" class="meta hidden" aria-live="polite">
+            <img id="thumb" class="thumb" alt="Video thumbnail" />
+            <div class="meta-text">
+              <h2 id="title">—</h2>
+              <p id="duration">Duration: —</p>
+              <label for="quality">Quality</label>
+              <select id="quality"></select>
+              <button id="download-btn" type="button">Download</button>
+            </div>
+          </section>
 
-      <p id="status" class="status" role="status">Idle</p>
+          <section id="collection" class="collection hidden" aria-live="polite">
+            <div class="collection-header">
+              <h2 id="collection-title">Playlist</h2>
+              <div class="collection-actions">
+                <button id="select-all-btn" type="button" class="btn-secondary">Select All</button>
+                <button id="deselect-all-btn" type="button" class="btn-secondary">Deselect All</button>
+              </div>
+            </div>
+
+            <div id="video-list-viewport" class="video-list-viewport">
+              <div id="video-list-spacer" class="video-list-spacer">
+                <div id="video-list-window" class="video-list-window"></div>
+              </div>
+            </div>
+
+            <p id="selection-count" class="selection-count">0 of 0 selected</p>
+
+            <div class="batch-options">
+              <div class="batch-field">
+                <label for="batch-quality">Quality</label>
+                <select id="batch-quality">
+                  <option value="1080">1080p</option>
+                  <option value="720">720p</option>
+                  <option value="480">480p</option>
+                  <option value="360">360p</option>
+                  <option value="best">best</option>
+                </select>
+              </div>
+              <div class="batch-field">
+                <label for="batch-format">Format</label>
+                <select id="batch-format" disabled>
+                  <option value="mp4" selected>MP4</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="collection-footer">
+              <button id="load-more-btn" type="button" class="btn-secondary hidden">Load more</button>
+              <button id="download-selected-btn" type="button">Download Selected</button>
+            </div>
+          </section>
+
+          <section class="progress-section">
+            <div class="progress-track" aria-hidden="true">
+              <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="progress-text"></p>
+          </section>
+
+          <p id="status" class="status" role="status">Idle</p>
+          <details id="error-details" class="error-details hidden">
+            <summary>Technical details</summary>
+            <pre id="error-details-text"></pre>
+          </details>
+
+          <section id="recent-urls" class="recent-urls hidden">
+            <h3>Recent URLs</h3>
+            <ul id="recent-list"></ul>
+          </section>
+        </div>
+
+        <aside class="queue-col">
+          <section id="queue-panel" class="queue-panel hidden">
+            <div class="queue-header">
+              <h3>Download queue</h3>
+              <button id="clear-queue-btn" type="button" class="btn-secondary">Clear queue</button>
+            </div>
+            <ul id="queue-list" class="queue-list"></ul>
+          </section>
+        </aside>
+      </div>
     </main>
 
     <script src="renderer.js"></script>

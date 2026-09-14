@@ -1,40 +1,21 @@
 # YouTube Downloader
 
-Minimal Electron app for Ubuntu: paste a YouTube URL, analyze metadata, pick a quality, and download an MP4 via **yt-dlp** (with **FFmpeg** for video/audio merges).
+Electron app for Ubuntu: paste a YouTube **video**, **playlist**, or **channel** URL, select videos, and download MP4s via **yt-dlp** and **FFmpeg**. Downloads share one queue on the **right**; **Parallel downloads** can be set to **1**, **2**, or **3** (default 1). Higher values may hit YouTube rate limits more often.
 
 ## Requirements
 
 - Ubuntu (or similar Linux)
-- Node.js 18+ (Node 24 works)
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) on your `PATH`
-- [FFmpeg](https://ffmpeg.org/) on your `PATH` (needed when video and audio streams are merged)
-
-### Install yt-dlp (Ubuntu)
-
-```bash
-sudo apt update
-sudo apt install -y pipx
-pipx ensurepath
-pipx install yt-dlp
-```
-
-Or follow the [official yt-dlp install guide](https://github.com/yt-dlp/yt-dlp#installation).
-
-### Install FFmpeg
+- Node.js 18+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) on `PATH`
+- [FFmpeg](https://ffmpeg.org/) on `PATH`
 
 ```bash
 sudo apt update
 sudo apt install -y ffmpeg
+pipx install yt-dlp   # or: pipx upgrade yt-dlp
 ```
 
-Confirm both tools:
-
-```bash
-yt-dlp --version
-ffmpeg -version
-```
-
-## Run the app
+## Run
 
 ```bash
 cd /path/to/yt-downloader
@@ -42,31 +23,35 @@ npm install
 npm start
 ```
 
-`npm start` launches Electron with `--no-sandbox` so it works on Ubuntu without reconfiguring Chromium’s SUID helper after every `npm install`. App security (`contextIsolation`, no Node in the renderer) is unchanged.
-
-To use the SUID sandbox instead, remove `--no-sandbox` from the scripts in `package.json` and run:
-
-```bash
-sudo chown root:root node_modules/electron/dist/chrome-sandbox
-sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
-```
+`npm start` uses `--no-sandbox` for Ubuntu Electron. Fully quit any old app window before restarting so you get the latest UI.
 
 ## Usage
 
-1. Paste a single YouTube video URL (`youtube.com/watch`, `youtu.be`, or `youtube.com/shorts`).
-2. Click **Analyze** to load title, thumbnail, duration, and available MP4 qualities.
-3. Choose a quality and click **Download**.
-4. Files are saved to `~/Downloads/YouTube Downloader`.
+1. Paste a video, playlist, or channel URL.
+2. **Analyze** (listing does not download).
+3. Pick quality (or select videos for playlist/channel) → **Download** / **Download Selected**.
+4. Files save to `~/Downloads/YouTube Downloader`.
 
-Progress shows while downloading. Status becomes **Completed** (with the file path) or **Failed** with an error message.
+The UI is two columns: controls on the left, **Download queue** on the right. Use **Pause** / **Resume** on individual queue rows. Pausing a running download holds that parallel slot so another video will not start in its place until you resume or clear it. **Clear queue** removes finished/waiting items; active and slot-holding paused downloads keep running.
 
-## Smoke checks
+Last single-video format and batch quality are remembered in the browser `localStorage`. Parallel downloads (1–3) is persisted with other app settings.
 
-- Invalid URL → clear error
-- yt-dlp / FFmpeg missing → shown in the dependency strip and status line
-- Public video analyze + download → MP4 under `~/Downloads/YouTube Downloader`
-- Restricted / unavailable video → failure message
+## Cookies.txt (bot check / age gate)
 
-## Milestone 1 scope
+Public videos usually work with no cookies (android player client). If YouTube asks to sign in (“not a bot”), export a Netscape **cookies.txt** once and pick it in the app:
 
-Single video, MP4 only, basic UI and progress. No queue, channel downloads, audio-only, settings, or packaging.
+1. Install a **Get cookies.txt LOCALLY** browser extension in Chrome/Chromium.
+2. While signed into YouTube in that browser, export cookies for `youtube.com`.
+3. In the app, under **Cookies file**, click **Choose…** and select that file.
+
+The app tries **android (no cookies)** first, then retries with `--cookies` + web client when needed. It does **not** use `--cookies-from-browser` (avoids Linux Chrome keyring / secretstorage failures).
+
+If a high quality is missing (YouTube SABR), downloads fall back to progressive **360p** (`18`) / best MP4.
+
+## Errors
+
+Typed messages for bot check / auth, private, age-restricted, region, network, and unavailable videos. Expand **Technical details** under the status line for raw yt-dlp output.
+
+## Scope
+
+Two-column UI, single queue with per-job pause/resume (slot-holding), channel/playlist select, android-then-cookies ladder. No Chrome keyring path, DRM bypass, audio-only, Windows packaging, or YouTube Data API.

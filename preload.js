@@ -5,26 +5,37 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   checkDeps: () => ipcRenderer.invoke('deps:check'),
 
-  analyze: (url) => ipcRenderer.invoke('video:analyze', { url }),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
 
-  download: (url, formatId, needsAudioMerge) =>
-    ipcRenderer.invoke('video:download', { url, formatId, needsAudioMerge }),
+  setSettings: (patch) => ipcRenderer.invoke('settings:set', patch || {}),
 
-  onDownloadProgress: (callback) => {
+  setCookiesPath: (cookiesPath) => ipcRenderer.invoke('settings:set', { cookiesPath }),
+
+  pickCookiesFile: () => ipcRenderer.invoke('settings:pickCookiesFile'),
+
+  analyze: (url) => ipcRenderer.invoke('url:analyze', { url }),
+
+  loadMore: (url, start) => ipcRenderer.invoke('url:loadMore', { url, start }),
+
+  enqueue: (jobs) => ipcRenderer.invoke('queue:enqueue', { jobs }),
+
+  getQueue: () => ipcRenderer.invoke('queue:snapshot'),
+
+  clearQueue: () => ipcRenderer.invoke('queue:clear'),
+
+  pauseJob: (jobId) => ipcRenderer.invoke('queue:pause', { jobId }),
+
+  resumeJob: (jobId) => ipcRenderer.invoke('queue:resume', { jobId }),
+
+  onQueueUpdate: (callback) => {
     const listener = (_event, data) => callback(data);
-    ipcRenderer.on('download:progress', listener);
-    return () => ipcRenderer.removeListener('download:progress', listener);
+    ipcRenderer.on('queue:update', listener);
+    return () => ipcRenderer.removeListener('queue:update', listener);
   },
 
-  onDownloadDone: (callback) => {
+  onQueueProgress: (callback) => {
     const listener = (_event, data) => callback(data);
-    ipcRenderer.on('download:done', listener);
-    return () => ipcRenderer.removeListener('download:done', listener);
-  },
-
-  onDownloadError: (callback) => {
-    const listener = (_event, data) => callback(data);
-    ipcRenderer.on('download:error', listener);
-    return () => ipcRenderer.removeListener('download:error', listener);
+    ipcRenderer.on('queue:progress', listener);
+    return () => ipcRenderer.removeListener('queue:progress', listener);
   },
 });

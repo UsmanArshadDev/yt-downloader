@@ -2,7 +2,7 @@
 
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
-const { checkDeps } = require('./lib/deps');
+const { checkDeps, bootstrapPath } = require('./lib/deps');
 const { toIpcError } = require('./lib/errors');
 const appSettings = require('./lib/appSettings');
 const youtubeProvider = require('./lib/youtubeProvider');
@@ -54,7 +54,11 @@ function registerIpc() {
   });
 
   ipcMain.handle('settings:get', async () => {
-    return { ok: true, ...appSettings.getSettings() };
+    return {
+      ok: true,
+      ...appSettings.getSettings(),
+      cookiesHealth: appSettings.getCookiesHealth(),
+    };
   });
 
   ipcMain.handle('settings:set', async (_event, patch) => {
@@ -63,7 +67,11 @@ function registerIpc() {
       if (Object.prototype.hasOwnProperty.call(patch || {}, 'concurrency')) {
         downloadManager.refresh();
       }
-      return { ok: true, ...settings };
+      return {
+        ok: true,
+        ...settings,
+        cookiesHealth: appSettings.getCookiesHealth(),
+      };
     } catch (err) {
       return toIpcError(err);
     }
@@ -80,10 +88,47 @@ function registerIpc() {
         ],
       });
       if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-        return { ok: true, canceled: true, ...appSettings.getSettings() };
+        return {
+          ok: true,
+          canceled: true,
+          ...appSettings.getSettings(),
+          cookiesHealth: appSettings.getCookiesHealth(),
+        };
       }
       const settings = appSettings.setCookiesPath(result.filePaths[0]);
-      return { ok: true, canceled: false, ...settings };
+      return {
+        ok: true,
+        canceled: false,
+        ...settings,
+        cookiesHealth: appSettings.getCookiesHealth(),
+      };
+    } catch (err) {
+      return toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('settings:pickDownloadDir', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow || undefined, {
+        title: 'Choose download folder',
+        properties: ['openDirectory', 'createDirectory'],
+        defaultPath: appSettings.getDownloadDir(),
+      });
+      if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+        return {
+          ok: true,
+          canceled: true,
+          ...appSettings.getSettings(),
+          cookiesHealth: appSettings.getCookiesHealth(),
+        };
+      }
+      const settings = appSettings.setDownloadDir(result.filePaths[0]);
+      return {
+        ok: true,
+        canceled: false,
+        ...settings,
+        cookiesHealth: appSettings.getCookiesHealth(),
+      };
     } catch (err) {
       return toIpcError(err);
     }
@@ -146,6 +191,24 @@ function registerIpc() {
       return toIpcError(err);
     }
   });
+
+  ipcMain.handle('queue:pauseAll', async () => {
+    try {
+      const queue = downloadManager.pauseAll();
+      return { ok: true, queue };
+    } catch (err) {
+      return toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('queue:resumeAll', async () => {
+    try {
+      const queue = downloadManager.resumeAll();
+      return { ok: true, queue };
+    } catch (err) {
+      return toIpcError(err);
+    }
+  });
 }
 
 function wireQueueEvents() {
@@ -158,6 +221,7 @@ function wireQueueEvents() {
 }
 
 app.whenReady().then(() => {
+  bootstrapPath();
   appSettings.init(app.getPath('userData'));
   registerIpc();
   wireQueueEvents();

@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
 
   pickCookiesFile: () => ipcRenderer.invoke('settings:pickCookiesFile'),
 
+  pickDownloadDir: () => ipcRenderer.invoke('settings:pickDownloadDir'),
+
   analyze: (url) => ipcRenderer.invoke('url:analyze', { url }),
 
   loadMore: (url, start) => ipcRenderer.invoke('url:loadMore', { url, start }),
@@ -26,6 +28,10 @@ contextBridge.exposeInMainWorld('api', {
   pauseJob: (jobId) => ipcRenderer.invoke('queue:pause', { jobId }),
 
   resumeJob: (jobId) => ipcRenderer.invoke('queue:resume', { jobId }),
+
+  pauseAll: () => ipcRenderer.invoke('queue:pauseAll'),
+
+  resumeAll: () => ipcRenderer.invoke('queue:resumeAll'),
 
   onQueueUpdate: (callback) => {
     const listener = (_event, data) => callback(data);

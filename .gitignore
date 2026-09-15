@@ -4,3 +4,9 @@ npm-debug.log*
 *.log
 dist/
 out/
+.verify-out/
+*.mp4
+*.m4a
+*.webm
+*.mkv
+deno.lock

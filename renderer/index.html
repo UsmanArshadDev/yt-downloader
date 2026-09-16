@@ -12,68 +12,61 @@
   </head>
   <body>
     <main class="app">
-      <header class="header">
-        <h1>YouTube Downloader</h1>
-        <p class="subtitle">Paste a video, playlist, or channel URL. Downloads use yt-dlp with your cookies and FFmpeg merge.</p>
-      </header>
-
       <div class="layout">
         <div class="main-col">
-          <section id="deps" class="deps" aria-live="polite">
-            <div class="deps-item" id="deps-ytdlp">
-              <span class="deps-label">yt-dlp</span>
-              <span class="deps-status">Checking…</span>
-            </div>
-            <div class="deps-item" id="deps-ffmpeg">
-              <span class="deps-label">FFmpeg</span>
-              <span class="deps-status">Checking…</span>
-            </div>
-            <div class="deps-item" id="deps-deno">
-              <span class="deps-label">Deno</span>
-              <span class="deps-status">Checking…</span>
-            </div>
-          </section>
+          <section id="settings-panel" class="settings-panel hidden">
+            <section id="deps" class="deps" aria-live="polite">
+              <div class="deps-item" id="deps-ytdlp">
+                <span class="deps-label">yt-dlp</span>
+                <span class="deps-status">Checking…</span>
+              </div>
+              <div class="deps-item" id="deps-ffmpeg">
+                <span class="deps-label">FFmpeg</span>
+                <span class="deps-status">Checking…</span>
+              </div>
+              <div class="deps-item" id="deps-deno">
+                <span class="deps-label">Deno</span>
+                <span class="deps-status">Checking…</span>
+              </div>
+            </section>
 
-          <section class="cookies-section" aria-label="Cookies and download folder">
-            <label for="cookies-path">Cookies file (optional, for bot-check videos)</label>
-            <div class="cookies-row">
-              <input
-                id="cookies-path"
-                type="text"
-                readonly
-                placeholder="No cookies.txt selected"
-                spellcheck="false"
-              />
-              <button id="cookies-choose-btn" type="button" class="btn-secondary">Choose…</button>
-              <button id="cookies-clear-btn" type="button" class="btn-secondary">Clear</button>
-            </div>
-            <p id="cookies-hint" class="cookies-hint">
-              For 480p+, export a fresh cookies.txt while signed into YouTube, then Choose…. Fully
-              restart the app after updates (reload is not enough).
-            </p>
-            <label for="download-dir">Download folder</label>
-            <div class="cookies-row">
-              <input
-                id="download-dir"
-                type="text"
-                readonly
-                placeholder="~/Downloads/YouTube Downloader"
-                spellcheck="false"
-              />
-              <button id="download-dir-choose-btn" type="button" class="btn-secondary">Choose…</button>
-            </div>
-            <div class="concurrency-row">
-              <label for="concurrency">Parallel downloads</label>
-              <select id="concurrency">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
-            <label class="fallback-row" for="accept-lower-quality">
-              <input id="accept-lower-quality" type="checkbox" />
-              <span>If selected quality unavailable, keep best available (don’t fail)</span>
-            </label>
+            <section class="cookies-section" aria-label="Cookies and download folder">
+              <label for="cookies-path">Cookies file</label>
+              <div class="cookies-row">
+                <input
+                  id="cookies-path"
+                  type="text"
+                  readonly
+                  placeholder="No cookies.txt selected"
+                  spellcheck="false"
+                />
+                <button id="cookies-choose-btn" type="button" class="btn-secondary">Choose…</button>
+                <button id="cookies-clear-btn" type="button" class="btn-secondary">Clear</button>
+              </div>
+              <label for="download-dir">Download folder</label>
+              <div class="cookies-row">
+                <input
+                  id="download-dir"
+                  type="text"
+                  readonly
+                  placeholder="~/Downloads/YouTube Downloader"
+                  spellcheck="false"
+                />
+                <button id="download-dir-choose-btn" type="button" class="btn-secondary">Choose…</button>
+              </div>
+              <div class="concurrency-row">
+                <label for="concurrency">Parallel downloads</label>
+                <select id="concurrency">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+              <label class="fallback-row" for="accept-lower-quality">
+                <input id="accept-lower-quality" type="checkbox" />
+                <span>If selected quality unavailable, keep best available (don’t fail)</span>
+              </label>
+            </section>
           </section>
 
           <section class="url-section">
@@ -163,11 +156,6 @@
             <summary>Technical details</summary>
             <pre id="error-details-text"></pre>
           </details>
-
-          <section id="recent-urls" class="recent-urls hidden">
-            <h3>Recent URLs</h3>
-            <ul id="recent-list"></ul>
-          </section>
         </div>
 
         <aside class="queue-col">

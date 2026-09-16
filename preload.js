@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('api', {
 
   pickDownloadDir: () => ipcRenderer.invoke('settings:pickDownloadDir'),
 
+  addRecent: (entry) => ipcRenderer.invoke('recent:add', entry || {}),
+
+  clearRecent: () => ipcRenderer.invoke('recent:clear'),
+
   analyze: (url) => ipcRenderer.invoke('url:analyze', { url }),
 
   loadMore: (url, start) => ipcRenderer.invoke('url:loadMore', { url, start }),
@@ -43,5 +47,17 @@ contextBridge.exposeInMainWorld('api', {
     const listener = (_event, data) => callback(data);
     ipcRenderer.on('queue:progress', listener);
     return () => ipcRenderer.removeListener('queue:progress', listener);
+  },
+
+  onUiVisibility: (callback) => {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on('ui:visibility', listener);
+    return () => ipcRenderer.removeListener('ui:visibility', listener);
+  },
+
+  onRecentOpen: (callback) => {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on('recent:open', listener);
+    return () => ipcRenderer.removeListener('recent:open', listener);
   },
 });

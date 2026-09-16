@@ -36,22 +36,18 @@ const els = {
   pauseAllBtn: document.getElementById('pause-all-btn'),
   resumeAllBtn: document.getElementById('resume-all-btn'),
   cookiesPath: document.getElementById('cookies-path'),
-  cookiesHint: document.getElementById('cookies-hint'),
   cookiesChooseBtn: document.getElementById('cookies-choose-btn'),
   cookiesClearBtn: document.getElementById('cookies-clear-btn'),
   downloadDir: document.getElementById('download-dir'),
   downloadDirChooseBtn: document.getElementById('download-dir-choose-btn'),
   concurrency: document.getElementById('concurrency'),
   acceptLowerQuality: document.getElementById('accept-lower-quality'),
+  settingsPanel: document.getElementById('settings-panel'),
   status: document.getElementById('status'),
   errorDetails: document.getElementById('error-details'),
   errorDetailsText: document.getElementById('error-details-text'),
-  recentUrls: document.getElementById('recent-urls'),
-  recentList: document.getElementById('recent-list'),
 };
 
-const RECENT_KEY = 'yt-downloader.recentUrls';
-const RECENT_MAX = 5;
 const LAST_SINGLE_FORMAT_KEY = 'yt-downloader.lastSingleFormatId';
 const LAST_BATCH_QUALITY_KEY = 'yt-downloader.lastBatchQuality';
 
@@ -70,49 +66,27 @@ let singleVideo = null;
 const depsOk = { ytdlp: false, ffmpeg: false, deno: false };
 
 /**
- * @returns {string[]}
+ * @param {{ url: string, title?: string, type?: string }} entry
  */
-function loadRecent() {
+async function saveRecent(entry) {
+  if (!entry || !entry.url) return;
   try {
-    const raw = localStorage.getItem(RECENT_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((u) => typeof u === 'string' && u.trim()).slice(0, RECENT_MAX);
+    await window.api.addRecent({
+      url: entry.url,
+      title: entry.title || entry.url,
+      type: entry.type || 'video',
+    });
   } catch {
-    return [];
+    // ignore
   }
 }
 
 /**
- * @param {string} url
+ * @param {boolean} show
  */
-function saveRecent(url) {
-  const trimmed = (url || '').trim();
-  if (!trimmed) return;
-  const next = [trimmed, ...loadRecent().filter((u) => u !== trimmed)].slice(0, RECENT_MAX);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-}
-
-function renderRecent() {
-  const urls = loadRecent();
-  els.recentList.innerHTML = '';
-  if (urls.length === 0) {
-    els.recentUrls.classList.add('hidden');
-    return;
-  }
-
-  els.recentUrls.classList.remove('hidden');
-  for (const url of urls) {
-    const li = document.createElement('li');
-    li.textContent = url;
-    li.title = url;
-    li.addEventListener('click', () => {
-      els.urlInput.value = url;
-      els.urlInput.focus();
-    });
-    els.recentList.appendChild(li);
-  }
+function applyShowSettings(show) {
+  if (!els.settingsPanel) return;
+  els.settingsPanel.classList.toggle('hidden', !show);
 }
 
 /**
@@ -132,39 +106,23 @@ function renderDownloadDir(downloadDir) {
   els.downloadDir.placeholder = downloadDir ? '' : '~/Downloads/YouTube Downloader';
 }
 
-const DEFAULT_COOKIES_HINT =
-  'For 480p+, export a fresh cookies.txt while signed into YouTube, then Choose…. Fully restart the app after updates (reload is not enough).';
-
-/**
- * @param {{ message?: string|null, readable?: boolean, exists?: boolean, configured?: boolean }|null|undefined} health
- */
-function renderCookiesHealth(health) {
-  if (!els.cookiesHint) return;
-  const message =
-    health && typeof health.message === 'string' && health.message.trim()
-      ? health.message.trim()
-      : DEFAULT_COOKIES_HINT;
-  els.cookiesHint.textContent = message;
-  const warn =
-    Boolean(health) &&
-    (!health.configured || !health.exists || !health.readable || Boolean(health.message));
-  els.cookiesHint.classList.toggle('warn', warn && message !== DEFAULT_COOKIES_HINT);
-}
-
 /**
  * @param {{
  *   cookiesPath?: string|null,
  *   downloadDir?: string|null,
  *   cookiesHealth?: object,
  *   concurrency?: number,
- *   acceptLowerQuality?: boolean
+ *   acceptLowerQuality?: boolean,
+ *   showSettings?: boolean
  * }|null|undefined} result
  */
 function applyCookiesSettings(result) {
   if (!result) return;
   renderCookiesPath(result.cookiesPath);
   renderDownloadDir(result.downloadDir);
-  renderCookiesHealth(result.cookiesHealth);
+  if (typeof result.showSettings === 'boolean') {
+    applyShowSettings(result.showSettings);
+  }
   if (els.acceptLowerQuality) {
     els.acceptLowerQuality.checked = Boolean(result.acceptLowerQuality);
   }
@@ -516,8 +474,11 @@ async function onAnalyze() {
     return;
   }
 
-  saveRecent(url);
-  renderRecent();
+  await saveRecent({
+    url,
+    title: result.title || url,
+    type: result.type || 'video',
+  });
 
   if (result.type === 'video') {
     showVideoMeta(result);
@@ -701,8 +662,7 @@ function renderQueue(queue) {
   els.queuePanel.classList.remove('hidden');
   els.queueList.innerHTML = '';
 
-  const recent = queue.slice(-40);
-  for (const job of recent) {
+  for (const job of queue) {
     const li = document.createElement('li');
     li.dataset.jobId = job.jobId;
 
@@ -1048,4 +1008,16 @@ restoreBatchQuality();
 syncBatchFormatUi();
 refreshDeps();
 refreshCookiesSettings();
-renderRecent();
+
+window.api.onUiVisibility((data) => {
+  if (data && typeof data.showSettings === 'boolean') {
+    applyShowSettings(data.showSettings);
+  }
+});
+
+window.api.onRecentOpen((data) => {
+  if (!data || !data.url) return;
+  els.urlInput.value = data.url;
+  els.urlInput.focus();
+  setStatus('Loaded from Recent');
+});

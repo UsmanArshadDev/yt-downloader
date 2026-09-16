@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const { checkDeps, bootstrapPath } = require('./lib/deps');
 const { toIpcError } = require('./lib/errors');
@@ -10,6 +10,88 @@ const { downloadManager } = require('./lib/downloadManager');
 
 /** @type {BrowserWindow|null} */
 let mainWindow = null;
+
+/**
+ * @param {string} text
+ * @param {number} [max=48]
+ * @returns {string}
+ */
+function truncateLabel(text, max = 48) {
+  const s = String(text || '').trim();
+  if (s.length <= max) return s;
+  return `${s.slice(0, max - 1)}…`;
+}
+
+/**
+ * @param {{ url: string, title: string, type: string }} entry
+ * @returns {string}
+ */
+function recentMenuLabel(entry) {
+  const title = truncateLabel(entry.title || entry.url);
+  if (entry.type === 'playlist' || entry.type === 'channel') {
+    return `${title} — ${entry.type}`;
+  }
+  return title;
+}
+
+function rebuildAppMenu() {
+  const showSettings = appSettings.getShowSettings();
+  const recentEntries = appSettings.getRecentEntries();
+
+  /** @type {Electron.MenuItemConstructorOptions[]} */
+  const recentItems =
+    recentEntries.length === 0
+      ? [{ label: '(empty)', enabled: false }]
+      : recentEntries.map((entry) => ({
+          label: recentMenuLabel(entry),
+          toolTip: entry.url,
+          click: () => {
+            broadcast('recent:open', { url: entry.url });
+          },
+        }));
+
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Recent',
+          submenu: recentItems,
+        },
+        {
+          label: 'Clear Recent',
+          enabled: recentEntries.length > 0,
+          click: () => {
+            appSettings.clearRecentEntries();
+            rebuildAppMenu();
+          },
+        },
+        { type: 'separator' },
+        process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Show settings',
+          type: 'checkbox',
+          checked: showSettings,
+          click: (menuItem) => {
+            appSettings.setShowSettings(Boolean(menuItem.checked));
+            broadcast('ui:visibility', { showSettings: appSettings.getShowSettings() });
+            rebuildAppMenu();
+          },
+        },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'toggleDevTools' },
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -66,6 +148,10 @@ function registerIpc() {
       const settings = appSettings.setSettings(patch || {});
       if (Object.prototype.hasOwnProperty.call(patch || {}, 'concurrency')) {
         downloadManager.refresh();
+      }
+      if (Object.prototype.hasOwnProperty.call(patch || {}, 'showSettings')) {
+        broadcast('ui:visibility', { showSettings: settings.showSettings });
+        rebuildAppMenu();
       }
       return {
         ok: true,
@@ -129,6 +215,26 @@ function registerIpc() {
         ...settings,
         cookiesHealth: appSettings.getCookiesHealth(),
       };
+    } catch (err) {
+      return toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('recent:add', async (_event, entry) => {
+    try {
+      const settings = appSettings.addRecentEntry(entry || {});
+      rebuildAppMenu();
+      return { ok: true, ...settings };
+    } catch (err) {
+      return toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('recent:clear', async () => {
+    try {
+      const settings = appSettings.clearRecentEntries();
+      rebuildAppMenu();
+      return { ok: true, ...settings };
     } catch (err) {
       return toIpcError(err);
     }
@@ -225,6 +331,7 @@ app.whenReady().then(() => {
   appSettings.init(app.getPath('userData'));
   registerIpc();
   wireQueueEvents();
+  rebuildAppMenu();
   createWindow();
 
   app.on('activate', () => {

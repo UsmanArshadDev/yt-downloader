@@ -98,7 +98,15 @@ body {
 }
 
 .cookies-section {
+  margin-bottom: 0;
+}
+
+.settings-panel {
   margin-bottom: 20px;
+}
+
+.settings-panel.hidden {
+  display: none !important;
 }
 
 .cookies-section label {
@@ -130,16 +138,6 @@ body {
 }
 
 .deps-status.warn {
-  color: #b45309;
-}
-
-.cookies-hint {
-  margin: 6px 0 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.cookies-hint.warn {
   color: #b45309;
 }
 
@@ -648,50 +646,6 @@ button:disabled {
   color: var(--muted);
   max-height: 160px;
   overflow: auto;
-}
-
-.recent-urls {
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.recent-urls.hidden {
-  display: none !important;
-}
-
-.recent-urls h3 {
-  margin: 0 0 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-#recent-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-#recent-list li {
-  padding: 8px 6px;
-  border-bottom: 1px solid #eef1f4;
-  font-size: 0.82rem;
-  color: var(--text);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#recent-list li:last-child {
-  border-bottom: none;
-}
-
-#recent-list li:hover {
-  background: #f0f3f6;
-  color: var(--accent);
 }
 
 @media (max-width: 900px) {
